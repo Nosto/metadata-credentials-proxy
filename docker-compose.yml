@@ -1,0 +1,21 @@
+version: "2"
+
+services:
+  metadata:
+    build: .
+    command: /opt/metadata/metadata_wrapper_linux.sh
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_KEY
+      - AWS_SECRET_ACCESS_KEY
+      - DEFAULT_IAM_ROLE
+    networks:
+      metadata:
+        ipv4_address: 169.254.169.254
+
+networks:
+  metadata:
+    external:
+      name: metadata
