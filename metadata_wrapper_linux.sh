@@ -17,4 +17,4 @@ else
   echo "DEFAULT_IAM_ROLE not set"
 fi
 
-./metadata
+DOCKER_API_VERSION=1.35 ./metadata
