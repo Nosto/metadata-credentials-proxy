@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/docker/docker/client"
 	"golang.org/x/net/context"
 	"log"
 	"net"
@@ -14,14 +16,13 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/docker/docker/client"
 )
 
 type ststoken struct {
 	AccessKeyId     string
 	SecretAccessKey string
 	Token           string
+	Expiration      string
 }
 
 type SimpleContainer struct {
@@ -164,6 +165,11 @@ func containerFromIp(ip string) (container *SimpleContainer, err error) {
 
 		_, raw, err := cli.ContainerInspectWithRaw(ctx, containerName, false)
 
+		if err != nil {
+			log.Printf("ERROR: %s\n", err)
+			return nil, err
+		}
+
 		container = &SimpleContainer{}
 		err = json.Unmarshal(raw, container)
 
@@ -190,31 +196,29 @@ func (container *SimpleContainer) getEnvValue(key string) (value string, ok bool
 	return "", false
 }
 
-func (store *CredentialStore) getValue(arn string) (value *credentials.Value, err error) {
-	c, ok := store.credsMap[arn]
-
-	if !ok {
-		c = stscreds.NewCredentials(store.sess, arn)
-		store.credsMap[arn] = c
-	}
-
-	v, err := c.Get()
-
-	return &v, err
-}
-
 func (store *CredentialStore) getStsTokenJSON(arn string) (token string, err error) {
-	value, err := store.getValue(arn)
+	stsClient := sts.New(store.sess)
+
+	sessionName := "proxy"
+
+	resp, err := stsClient.AssumeRole(&sts.AssumeRoleInput{
+		DurationSeconds: aws.Int64(900),
+		RoleArn:         &arn,
+		RoleSessionName: &sessionName,
+	})
 
 	if err != nil {
-		return "", err
+		log.Printf("Error: %s", err)
+		return
 	}
 
-	sts := ststoken{AccessKeyId: value.AccessKeyID,
-		SecretAccessKey: value.SecretAccessKey,
-		Token:           value.SessionToken}
+	stsToken := ststoken{AccessKeyId: *resp.Credentials.AccessKeyId,
+		SecretAccessKey: *resp.Credentials.SecretAccessKey,
+		Token:           *resp.Credentials.SessionToken,
+		Expiration:      resp.Credentials.Expiration.Format("2006-01-02T15:04:05Z"),
+	}
 
-	json, err := json.Marshal(sts)
+	json, err := json.Marshal(stsToken)
 
 	if err != nil {
 		return "", err
