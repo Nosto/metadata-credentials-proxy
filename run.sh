@@ -26,5 +26,10 @@ if [ -z "${AWS_ACCESS_KEY_ID}" ]; then
   echo "Using AWS credentials from ~/.aws/credentials"
 fi
 
+if ! docker network ls --format "{{.Name}}" | grep -q -x metadata; then
+  echo "Adding missing metadata network"
+  docker network create -d bridge --subnet 169.254.169.0/24 metadata
+fi
+
 docker-compose build metadata
 DEFAULT_IAM_ROLE=$1 docker-compose run --rm metadata
