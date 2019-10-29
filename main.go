@@ -22,6 +22,10 @@ type ststoken struct {
 	AccessKeyId     string
 	SecretAccessKey string
 	Token           string
+	Code            string
+	Type            string
+	LastUpdated     string
+	Expiration      string
 }
 
 type SimpleContainer struct {
@@ -41,6 +45,7 @@ type CredentialStore struct {
 
 type Env struct {
 	credentialStore *CredentialStore
+	region          string
 }
 
 func NewCredentialStore(defaultRole string) (store *CredentialStore) {
@@ -57,6 +62,8 @@ func NewCredentialStore(defaultRole string) (store *CredentialStore) {
 var credentialStore *CredentialStore
 
 func main() {
+
+	region := flag.String("r", "us-east-1", "AWS region")
 	showHelp := flag.Bool("h", false, "Show help")
 	flag.Parse()
 
@@ -76,7 +83,7 @@ func main() {
 	}
 
 	credentialStore = NewCredentialStore(defaultRole)
-	env := &Env{credentialStore: credentialStore}
+	env := &Env{credentialStore: credentialStore, region: *region}
 
 	mux := http.NewServeMux()
 	// Currently we handle only credentials
@@ -143,6 +150,9 @@ func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Fprintf(w, sts)
+		return
+	case "/latest/dynamic/instance-identity/document":
+		fmt.Fprintf(w, "{\"region\": \"%s\"}", env.region)
 		return
 	}
 

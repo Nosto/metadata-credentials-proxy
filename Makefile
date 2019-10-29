@@ -9,3 +9,6 @@ deps:
 
 build:
 	GOPATH=$(CURDIR) go build
+
+format:
+	gofmt -w *.go
