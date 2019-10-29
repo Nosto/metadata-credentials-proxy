@@ -212,7 +212,12 @@ func (store *CredentialStore) getStsTokenJSON(arn string) (token string, err err
 
 	sts := ststoken{AccessKeyId: value.AccessKeyID,
 		SecretAccessKey: value.SecretAccessKey,
-		Token:           value.SessionToken}
+		Token:           value.SessionToken,
+		Code:            "Success",
+		Type:            "AWS-HMAC",
+		Expiration:      time.Now().Add(time.Minute * time.Duration(5)).Format(time.RFC3339),
+		LastUpdated:     time.Now().Format(time.RFC3339),
+	}
 
 	json, err := json.Marshal(sts)
 
