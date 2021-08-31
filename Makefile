@@ -1,4 +1,4 @@
-export PATH := $(PATH):/usr/lib/go-1.14/bin
+export PATH := $(PATH):/usr/lib/go-1.15/bin
 PACKAGE = metadata
 
 all: deps build
