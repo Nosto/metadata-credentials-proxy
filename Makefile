@@ -1,15 +1,10 @@
 export PATH := $(PATH):/usr/lib/go-1.15/bin
 PACKAGE = metadata
 
-all: deps build
-
-deps:
-	GOPATH=$(CURDIR) go get github.com/aws/aws-sdk-go
-	GOPATH=$(CURDIR) go get github.com/docker/docker/client
-	GOPATH=$(CURDIR) go get golang.org/x/net/context
+all: build
 
 build:
-	GOPATH=$(CURDIR) go build
+	go build -o metadata
 
 format:
 	gofmt -w *.go
