@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -100,7 +102,7 @@ func main() {
 }
 
 func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+	if r.Method != "GET" && r.Method != "PUT" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -134,6 +136,31 @@ func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("GET: %s (from %s) (container=%s / role=%s) (%s)\n", r.URL.Path, r.RemoteAddr, container.Name, role, r.UserAgent())
 
+	if r.Method == "GET" {
+		token := r.Header.Get("X-aws-ec2-metadata-token")
+
+		if token != "" {
+			timeToken, err := base64.StdEncoding.DecodeString(string(token))
+
+			if err != nil {
+				http.Error(w, "", http.StatusUnauthorized)
+				return
+			}
+
+			t, err := strconv.Atoi(string(timeToken))
+
+			if err != nil {
+				http.Error(w, "", http.StatusUnauthorized)
+				return
+			}
+
+			if int64(t) < time.Now().Unix() {
+				http.Error(w, "", http.StatusUnauthorized)
+				return
+			}
+		}
+	}
+
 	switch r.URL.Path {
 	case "/latest/meta-data/iam/security-credentials":
 		fmt.Fprintf(w, "dev")
@@ -153,6 +180,30 @@ func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	case "/latest/dynamic/instance-identity/document":
 		fmt.Fprintf(w, "{\"region\": \"%s\"}", env.region)
+		return
+	case "/latest/api/token":
+		if r.Method == "PUT" {
+			ttlStr := r.Header.Get("X-aws-ec2-metadata-token-ttl-seconds")
+
+			if ttlStr == "" {
+				fmt.Printf("Request didn't contain X-aws-ec2-metadata-token-ttl-seconds header")
+				http.Error(w, "Invalid token", http.StatusBadRequest)
+				return
+			}
+
+			ttl, err := strconv.Atoi(ttlStr)
+
+			if err != nil {
+				fmt.Printf("Parsing X-aws-ec2-metadata-token-ttl-seconds (%s) failed: %s", ttlStr, err)
+				http.Error(w, "Invalid token", http.StatusBadRequest)
+				return
+			}
+
+			timeToken := fmt.Sprintf("%d", time.Now().Unix()+int64(ttl))
+
+			encodedToken := base64.StdEncoding.EncodeToString([]byte(timeToken))
+			fmt.Fprintf(w, "%s", encodedToken)
+		}
 		return
 	}
 
