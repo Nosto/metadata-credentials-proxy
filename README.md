@@ -48,8 +48,8 @@ in the metadata network. Something like this is needed in docker-compose.yml:
 ```
 networks:
   default:
-    external:
-      name: metadata
+    name: metadata
+    external: true
 ```
 
 To set the IAM_ROLE in docker-compose.yml, add a IAM_ROLE variable like this:

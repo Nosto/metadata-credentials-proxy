@@ -17,5 +17,5 @@ services:
 
 networks:
   metadata:
-    external:
-      name: metadata
+    name: metadata
+    external: true
