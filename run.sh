@@ -31,5 +31,5 @@ if ! docker network ls --format "{{.Name}}" | grep -q -x metadata; then
   docker network create -d bridge --subnet 169.254.169.0/24 metadata
 fi
 
-docker-compose build metadata
-DEFAULT_IAM_ROLE=$1 docker-compose run --rm metadata
+docker compose build metadata
+DEFAULT_IAM_ROLE=$1 docker compose run --rm metadata
