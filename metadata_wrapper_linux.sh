@@ -5,8 +5,8 @@ if [ -z "${AWS_ACCESS_KEY_ID}" ]; then
   exit 1
 fi
 
-if [ -z "${AWS_SECRET_KEY}" ]; then
-  echo "Missing AWS_SECRET_KEY env variable!"
+if [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
+  echo "Missing AWS_SECRET_ACCCESS_KEY env variable!"
   exit 1
 fi
 
