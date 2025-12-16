@@ -60,5 +60,7 @@ if ! aws sts get-caller-identity > /dev/null 2>&1; then
   echo "ERROR: Invalid AWS credentials!"
 fi
 
-docker-compose build metadata
-DEFAULT_IAM_ROLE=$1 docker-compose run --rm metadata
+export DOCKER_API_VERSION=1.44
+
+docker compose build metadata
+DEFAULT_IAM_ROLE=$1 docker compose run --rm metadata
