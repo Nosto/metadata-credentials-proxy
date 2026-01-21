@@ -144,6 +144,7 @@ func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				http.Error(w, "", http.StatusUnauthorized)
+				fmt.Printf("Failed to base64 decode token: %s\n", string(token))
 				return
 			}
 
@@ -151,11 +152,13 @@ func (env *Env) credHandler(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				http.Error(w, "", http.StatusUnauthorized)
+				fmt.Printf("Failed to decode token: %s\n", string(timeToken))
 				return
 			}
 
 			if int64(t) < time.Now().Unix() {
 				http.Error(w, "", http.StatusUnauthorized)
+				fmt.Printf("Expired token\n")
 				return
 			}
 		}
@@ -218,12 +221,17 @@ func containerFromIp(ip string) (container *SimpleContainer, err error) {
 		containerName := fmt.Sprintf("/%s", shortname)
 
 		ctx := context.Background()
-		cli, err := client.NewEnvClient()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 		if err != nil {
 			return nil, err
 		}
 
 		_, raw, err := cli.ContainerInspectWithRaw(ctx, containerName, false)
+
+		if err != nil {
+			fmt.Printf("Failed to get container information: %s", err)
+			return nil, err
+		}
 
 		container = &SimpleContainer{}
 		err = json.Unmarshal(raw, container)

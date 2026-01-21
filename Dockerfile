@@ -1,6 +1,6 @@
-FROM debian:bookworm
+FROM debian:trixie
 
-RUN apt-get update && apt-get install -y golang-go make git docker.io dnsutils net-tools dnsutils
+RUN apt-get update && apt-get install -y golang-1.24-go make git docker.io dnsutils net-tools dnsutils
 
 RUN mkdir /opt/metadata
 COPY Makefile metadata_wrapper_linux.sh /opt/metadata/
